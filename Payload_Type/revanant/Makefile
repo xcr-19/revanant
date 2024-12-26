@@ -1,0 +1,24 @@
+BINARY_NAME?=main
+DEBUG_LEVEL?="debug"
+RABBITMQ_HOST?="127.0.0.1"
+RABBITMQ_PASSWORD="Xlr5mQjpCjmzwY3v9h7QD94NHMKla7"
+MYTHIC_SERVER_HOST?="127.0.0.1"
+MYTHIC_SERVER_GRPC_PORT="17444"
+WEBHOOK_DEFAULT_URL?=
+WEBHOOK_DEFAULT_CHANNEL?=
+WEBHOOK_DEFAULT_FEEDBACK_CHANNEL?=
+WEBHOOK_DEFAULT_CALLBACK_CHANNEL?=
+WEBHOOK_DEFAULT_STARTUP_CHANNEL?=
+
+build:
+	go mod download
+	go mod tidy
+	go build -o ${BINARY_NAME} .
+	cp ${BINARY_NAME} /
+	cd ./revanant/agent && go mod download && go mod tidy && cd ../..
+
+
+run:
+	cp /${BINARY_NAME} .
+	./${BINARY_NAME}
+
